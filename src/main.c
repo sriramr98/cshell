@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+char* EXIT_COMMAND = "exit";
+
 int main(int argc, char *argv[]) {
   // Flush after every printf
   setbuf(stdout, NULL);
@@ -15,6 +17,10 @@ int main(int argc, char *argv[]) {
     fgets(command, sizeof(command), stdin);
 
     command[strcspn(command, "\n")] = '\0';
+
+    if (strncmp(command, EXIT_COMMAND, strlen(EXIT_COMMAND)) == 0) {
+      return 0;
+    }
 
     printf("%s: command not found\n", command);
 
