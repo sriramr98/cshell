@@ -84,25 +84,23 @@ void perform_type(Command* cmd) {
   }
 }
 
-// void perform_cd(Command* cmd) {
-//   if (cmd->inputs->size == 0) {
-//     //TODO: I think just `cd` should move to root of the OS??
-//     return; 
-//   }
+void perform_cd(Command* cmd) {
+  if (cmd->inputs->size == 0) {
+    //TODO: I think just `cd` should move to root of the OS??
+    return; 
+  }
 
-//   char* path = get_element_from_list(cmd->inputs, 0);
-//   if (path == NULL) {
-//     //TODO: I think it's same scenario as above?
-//     return;
-//   }
+  char* path = get_element_from_list(cmd->inputs, 0);
+  if (path == NULL) {
+    //TODO: I think it's same scenario as above?
+    return;
+  }
 
-//   if(strncmp(path, ".", 1) == 0) {
-//     // If path starts with ., it's a relative path
-//   } else {
-    
-//   }
-
-// }
+  int resp = chdir(path);
+  if (resp == -1) {
+    printf("cd: %s: No such file or directory\n", path);
+  }
+}
 
 void perform_pwd(Command* cmd) {
   char* cwd = malloc(1024);
@@ -160,11 +158,11 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
-    // if (strcmp(cmd->command, CD_COMMAND) == 0) {
-    //   perform_cd(cmd);
-    //   free_command(cmd);
-    //   continue;
-    // }
+    if (strcmp(cmd->command, CD_COMMAND) == 0) {
+      perform_cd(cmd);
+      free_command(cmd);
+      continue;
+    }
 
     Program* prg = find_program(cmd->command);
 
