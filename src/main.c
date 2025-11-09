@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 // #include "array_list.h"
 #include "program.h"
 
 char* EXIT_COMMAND = "exit";
 char* ECHO_COMMAND = "echo";
 char* TYPE_COMMAND = "type";
+char* CD_COMMAND = "cd";
+char* PWD_COMMAND = "pwd";
 
 typedef struct {
   char* command;
@@ -67,7 +70,7 @@ void perform_type(Command* cmd) {
     return;
   }
 
-  if ((strcmp(param, EXIT_COMMAND) == 0) || (strcmp(param, ECHO_COMMAND) == 0) || (strcmp(param, TYPE_COMMAND) == 0) ) {
+  if ((strcmp(param, EXIT_COMMAND) == 0) || (strcmp(param, ECHO_COMMAND) == 0) || (strcmp(param, TYPE_COMMAND) == 0) || (strcmp(param, PWD_COMMAND) == 0) ) {
     printf("%s is a shell builtin\n", param);
   } else { 
     Program* program = find_program(param);
@@ -79,6 +82,36 @@ void perform_type(Command* cmd) {
 
     delete_program(program);
   }
+}
+
+// void perform_cd(Command* cmd) {
+//   if (cmd->inputs->size == 0) {
+//     //TODO: I think just `cd` should move to root of the OS??
+//     return; 
+//   }
+
+//   char* path = get_element_from_list(cmd->inputs, 0);
+//   if (path == NULL) {
+//     //TODO: I think it's same scenario as above?
+//     return;
+//   }
+
+//   if(strncmp(path, ".", 1) == 0) {
+//     // If path starts with ., it's a relative path
+//   } else {
+    
+//   }
+
+// }
+
+void perform_pwd(Command* cmd) {
+  char* cwd = malloc(1024);
+  if (getcwd(cwd, 1024) != NULL) {
+    printf("%s\n", cwd);
+  } else {
+    perror("pwd");
+  }
+  free(cwd);
 }
 
 // Captures the user's command in the "command" variable
@@ -120,6 +153,18 @@ int main(int argc, char *argv[]) {
       free_command(cmd);
       continue;
     }
+
+    if (strcmp(cmd->command, PWD_COMMAND) == 0) {
+      perform_pwd(cmd);
+      free_command(cmd);
+      continue;
+    }
+
+    // if (strcmp(cmd->command, CD_COMMAND) == 0) {
+    //   perform_cd(cmd);
+    //   free_command(cmd);
+    //   continue;
+    // }
 
     Program* prg = find_program(cmd->command);
 
