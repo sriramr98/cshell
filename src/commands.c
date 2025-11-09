@@ -29,24 +29,97 @@ void free_command(Command* cmd) {
 
 Command* parse_command(char* command) {
   Command* cmd = malloc(sizeof(Command));
-  cmd->command = NULL;  // Initialize to NULL
+  cmd->command = NULL;
   cmd->inputs = new_array_list(10);
 
-  char* tmp = malloc(sizeof(char) * (strlen(command) + 1));
+  int charCount = strlen(command);
+  char* tmp = malloc(sizeof(char) * (charCount + 1));
   strcpy(tmp, command);
-  char* token = strtok(tmp, " ");
 
-  while (token != NULL) {
-    int length = strlen(token);
-    if (cmd->command == NULL) {
-      cmd->command = malloc(sizeof(char) * (length + 1));
-      strcpy(cmd->command, token);
-    } else {
-      add_array_list(cmd->inputs, token);
-    }
-    token = strtok(NULL, " ");
+  int i = 0;
+  
+  // Skip leading whitespace
+  while (i < charCount && tmp[i] == ' ') {
+    i++;
+  }
+  
+  if (i >= charCount) {
+    // Empty command
+    free(tmp);
+    return cmd;
   }
 
+  // Extract command name (first word)
+  int cmdStart = i;
+  while (i < charCount && tmp[i] != ' ') {
+    i++;
+  }
+  
+  int cmdLen = i - cmdStart;
+  cmd->command = malloc(sizeof(char) * (cmdLen + 1));
+  strncpy(cmd->command, tmp + cmdStart, cmdLen);
+  cmd->command[cmdLen] = '\0';
+
+  // Parse arguments
+  while (i < charCount) {
+    // Skip whitespace
+    while (i < charCount && tmp[i] == ' ') {
+      i++;
+    }
+    
+    if (i >= charCount) {
+      break;
+    }
+    
+    int argStart = i;
+    int argLen = 0;
+    char* arg = NULL;
+    
+    // Check if argument starts with a quote
+    if (tmp[i] == '"' || tmp[i] == '\'') {
+      char quote = tmp[i];
+      i++; // Skip opening quote
+      argStart = i;
+      
+      // Find closing quote
+      while (i < charCount && tmp[i] != quote) {
+        i++;
+      }
+      
+      if (i < charCount) {
+        // Found closing quote
+        argLen = i - argStart;
+        arg = malloc(sizeof(char) * (argLen + 1));
+        strncpy(arg, tmp + argStart, argLen);
+        arg[argLen] = '\0';
+        i++; // Skip closing quote
+      } else {
+        // No closing quote found, treat as regular argument
+        argLen = charCount - argStart;
+        arg = malloc(sizeof(char) * (argLen + 1));
+        strncpy(arg, tmp + argStart - 1, argLen + 1); // Include the quote
+        arg[argLen + 1] = '\0';
+        i = charCount;
+      }
+    } else {
+      // Regular argument (no quotes)
+      while (i < charCount && tmp[i] != ' ') {
+        i++;
+      }
+      
+      argLen = i - argStart;
+      arg = malloc(sizeof(char) * (argLen + 1));
+      strncpy(arg, tmp + argStart, argLen);
+      arg[argLen] = '\0';
+    }
+    
+    // Add argument to the list
+    if (arg != NULL) {
+      add_array_list(cmd->inputs, arg);
+    }
+  }
+
+  free(tmp);
   return cmd;
 }
 
