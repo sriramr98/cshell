@@ -41,7 +41,9 @@ Command* parse_command(char* command) {
   cmd->command = NULL;  // Initialize to NULL
   cmd->inputs = new_array_list(10);
 
-  char* token = strtok(command, " ");
+  char* tmp = malloc(sizeof(char) * (strlen(command) + 1));
+  strcpy(tmp, command);
+  char* token = strtok(tmp, " ");
 
   while (token != NULL) {
     int length = strlen(token);
@@ -112,8 +114,11 @@ int main(int argc, char *argv[]) {
     printf("$ ");
 
     fgets(command, sizeof(command), stdin);
-
     command[strcspn(command, "\n")] = '\0';
+
+    if (strcmp(command, "") == 0) {
+      continue;
+    }
 
     Command* cmd = parse_command(command);
     if (cmd == NULL) {
@@ -137,7 +142,9 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
-    printf("%s: command not found\n", command);
+    system(command);
+
+    // printf("%s: command not found\n", command);
 
     free_command(cmd);
   }
