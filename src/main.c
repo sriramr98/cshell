@@ -5,6 +5,7 @@
 
 char* EXIT_COMMAND = "exit";
 char* ECHO_COMMAND = "echo";
+char* TYPE_COMMAND = "type";
 
 typedef struct {
   char* command;
@@ -53,6 +54,23 @@ void perform_echo(Command* cmd) {
   printf("\n");
 }
 
+void perform_type(Command* cmd) {
+  if (cmd->inputs->size == 0) {
+    return;
+  }
+
+  char* param = get_element_from_list(cmd->inputs, 0);
+  if (param == NULL) {
+    return;
+  }
+
+  if ((strcmp(param, EXIT_COMMAND) == 0) || (strcmp(param, ECHO_COMMAND) == 0) || (strcmp(param, TYPE_COMMAND) == 0) ) {
+    printf("%s is a shell builtin\n", param);
+  } else {
+    printf("%s: not found\n", param);
+  }
+}
+
 // Captures the user's command in the "command" variable
 char command[1024];
 
@@ -80,6 +98,12 @@ int main(int argc, char *argv[]) {
 
     if (strcmp(cmd->command, ECHO_COMMAND) == 0) {
       perform_echo(cmd);
+      free_command(cmd);
+      continue;
+    }
+
+    if (strcmp(cmd->command, TYPE_COMMAND) == 0) {
+      perform_type(cmd);
       free_command(cmd);
       continue;
     }
