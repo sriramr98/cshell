@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.nomad": "hcl",
+        "array_list.h": "c",
+        "program.h": "c"
+    }
+}

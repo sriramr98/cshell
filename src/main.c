@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "array_list.h"
+// #include "array_list.h"
+#include "program.h"
 
 char* EXIT_COMMAND = "exit";
 char* ECHO_COMMAND = "echo";
@@ -16,6 +17,23 @@ void free_command(Command* cmd) {
   free(cmd->command);
   free_array_list(cmd->inputs);
   free(cmd);
+}
+
+// pathInfo is a string of paths split by `:`
+ArrayList* split_path(char* pathInfo) {
+  ArrayList* list = new_array_list(10);
+
+  char* tmp = malloc(strlen(pathInfo) + 1);
+  strcpy(tmp, pathInfo);
+
+  char* token = strtok(tmp, ":");
+  while (token != NULL) {
+    add_array_list(list, token);
+    token = strtok(NULL, ":");
+  }
+
+  free(tmp);
+  return list;
 }
 
 Command* parse_command(char* command) {
@@ -67,7 +85,18 @@ void perform_type(Command* cmd) {
   if ((strcmp(param, EXIT_COMMAND) == 0) || (strcmp(param, ECHO_COMMAND) == 0) || (strcmp(param, TYPE_COMMAND) == 0) ) {
     printf("%s is a shell builtin\n", param);
   } else {
-    printf("%s: not found\n", param);
+    char* pathInfo = getenv("PATH");
+    ArrayList* paths = split_path(pathInfo);
+
+    Program* program = find_program(paths, param);
+    if (program == NULL) {
+      printf("%s: not found\n", param);
+    } else {
+      printf("%s is %s\n", param, program->path);
+    }
+
+    free_array_list(paths);
+    delete_program(program);
   }
 }
 
