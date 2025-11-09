@@ -19,6 +19,7 @@ void free_command(Command* cmd) {
 
 Command* parse_command(char* command) {
   Command* cmd = malloc(sizeof(Command));
+  cmd->command = NULL;  // Initialize to NULL
   cmd->inputs = new_array_list(10);
 
   char* token = strtok(command, " ");
@@ -26,7 +27,7 @@ Command* parse_command(char* command) {
   while (token != NULL) {
     int length = strlen(token);
     if (cmd->command == NULL) {
-      cmd->command = malloc(sizeof(char) * length);
+      cmd->command = malloc(sizeof(char) * (length + 1));
       strcpy(cmd->command, token);
     } else {
       add_array_list(cmd->inputs, token);
@@ -39,6 +40,7 @@ Command* parse_command(char* command) {
 
 void perform_echo(Command* cmd) {
   if (cmd->inputs == NULL || cmd->inputs->size == 0) {
+    printf("\n");
     return;
   }
   for (int i=0; i<cmd->inputs->size; i++) {
@@ -62,8 +64,6 @@ int main(int argc, char *argv[]) {
   {
     printf("$ ");
 
-    // Captures the user's command in the "command" variable
-    char command[1024];
     fgets(command, sizeof(command), stdin);
 
     command[strcspn(command, "\n")] = '\0';
@@ -74,11 +74,13 @@ int main(int argc, char *argv[]) {
     }
 
     if (strcmp(cmd->command, EXIT_COMMAND) == 0) {
+      free_command(cmd);
       return 0;
     }
 
     if (strcmp(cmd->command, ECHO_COMMAND) == 0) {
       perform_echo(cmd);
+      free_command(cmd);
       continue;
     }
 
