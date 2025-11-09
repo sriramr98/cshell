@@ -19,23 +19,6 @@ void free_command(Command* cmd) {
   free(cmd);
 }
 
-// pathInfo is a string of paths split by `:`
-ArrayList* split_path(char* pathInfo) {
-  ArrayList* list = new_array_list(10);
-
-  char* tmp = malloc(strlen(pathInfo) + 1);
-  strcpy(tmp, pathInfo);
-
-  char* token = strtok(tmp, ":");
-  while (token != NULL) {
-    add_array_list(list, token);
-    token = strtok(NULL, ":");
-  }
-
-  free(tmp);
-  return list;
-}
-
 Command* parse_command(char* command) {
   Command* cmd = malloc(sizeof(Command));
   cmd->command = NULL;  // Initialize to NULL
@@ -86,18 +69,14 @@ void perform_type(Command* cmd) {
 
   if ((strcmp(param, EXIT_COMMAND) == 0) || (strcmp(param, ECHO_COMMAND) == 0) || (strcmp(param, TYPE_COMMAND) == 0) ) {
     printf("%s is a shell builtin\n", param);
-  } else {
-    char* pathInfo = getenv("PATH");
-    ArrayList* paths = split_path(pathInfo);
-
-    Program* program = find_program(paths, param);
+  } else { 
+    Program* program = find_program(param);
     if (program == NULL) {
       printf("%s: not found\n", param);
     } else {
       printf("%s is %s\n", param, program->path);
     }
 
-    free_array_list(paths);
     delete_program(program);
   }
 }
@@ -142,11 +121,14 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
-    system(command);
+    Program* prg = find_program(cmd->command);
 
-    // printf("%s: command not found\n", command);
-
-    free_command(cmd);
+    if (prg == NULL) {
+      printf("%s: command not found\n", command);
+      free_command(cmd);
+    } else {
+      system(command);
+    }
   }
   
   return 0;

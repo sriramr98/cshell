@@ -9,4 +9,4 @@ Program* new_program(char* name, char* path);
 
 void delete_program(Program* prog);
 
-Program* find_program(ArrayList* paths, char* name);
+Program* find_program(char* name);

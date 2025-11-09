@@ -35,7 +35,27 @@ void delete_program(Program* prog) {
   free(prog);
 }
 
-Program* find_program(ArrayList* paths, char* name) {
+// pathInfo is a string of paths split by `:`
+ArrayList* split_path(char* pathInfo) {
+  ArrayList* list = new_array_list(10);
+
+  char* tmp = malloc(strlen(pathInfo) + 1);
+  strcpy(tmp, pathInfo);
+
+  char* token = strtok(tmp, ":");
+  while (token != NULL) {
+    add_array_list(list, token);
+    token = strtok(NULL, ":");
+  }
+
+  free(tmp);
+  return list;
+}
+
+Program* find_program(char* name) {
+    char* pathInfo = getenv("PATH");
+    ArrayList* paths = split_path(pathInfo);
+
     if (paths == NULL) return NULL;
     if (paths->size == 0) return NULL;
     
@@ -64,12 +84,14 @@ Program* find_program(ArrayList* paths, char* name) {
                 Program* prog = new_program(in_file->d_name, full_path);
                 
                 closedir(FD);
+                free_array_list(paths);
                 return prog;
             }
         }
         closedir(FD);
     }
-    
+
+    free_array_list(paths);
     return NULL; // No executable program found
 
 }
