@@ -84,6 +84,13 @@ void perform_type(Command* cmd) {
   }
 }
 
+void changeDir(char* path) {
+  int resp = chdir(path);
+  if (resp == -1) {
+    printf("cd: %s: No such file or directory\n", path);
+  }
+}
+
 void perform_cd(Command* cmd) {
   if (cmd->inputs->size == 0) {
     //TODO: I think just `cd` should move to root of the OS??
@@ -96,10 +103,16 @@ void perform_cd(Command* cmd) {
     return;
   }
 
-  int resp = chdir(path);
-  if (resp == -1) {
-    printf("cd: %s: No such file or directory\n", path);
+  if (strcmp(path, "~") == 0) {
+    // CD to root
+    char* rootDir = getenv("HOME");
+    if (rootDir == NULL) return;
+ 
+    changeDir(rootDir);
+    return;
   }
+
+  changeDir(path); 
 }
 
 void perform_pwd(Command* cmd) {
