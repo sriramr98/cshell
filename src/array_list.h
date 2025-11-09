@@ -1,3 +1,6 @@
+#ifndef ARRAY_LIST_H
+#define ARRAY_LIST_H
+
 typedef struct {
   char** inputs;
   int capacity;
@@ -10,3 +13,5 @@ char* get_element_from_list(ArrayList* list, int index);
 void free_array_list(ArrayList* list);
 int array_list_size(ArrayList* list);
 int array_list_capacity(ArrayList* list);
+
+#endif // ARRAY_LIST_H

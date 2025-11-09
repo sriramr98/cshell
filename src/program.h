@@ -1,3 +1,6 @@
+#ifndef PROGRAM_H
+#define PROGRAM_H
+
 #include "array_list.h"
 
 typedef struct {
@@ -10,3 +13,5 @@ Program* new_program(char* name, char* path);
 void delete_program(Program* prog);
 
 Program* find_program(char* name);
+
+#endif // PROGRAM_H
