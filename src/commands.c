@@ -52,7 +52,7 @@ char* extract_argument(char* source, int argStart, int argEnd, int quoteCount) {
 
   arg[argIdx] = '\0';
 
-  printf("Found argument %s\n", arg);
+  // printf("Found argument %s\n", arg);
 
   return arg;
 
@@ -108,19 +108,12 @@ Command* parse_command(char* command) {
  
     if (tmp[i] == '\'') {
       // printf("Found quotes at %d\n", i);
-      if (isInsideQuote == 1) {
-        isInsideQuote = -1;
-      } else {
-        isInsideQuote = 1;
-      }
+      isInsideQuote = isInsideQuote == 1 ? -1 : 1;
       quoteCount++;
       i++;
       continue;
-    }
-
-
-    if (tmp[i] == ' ') {
-      // printf("Found non quote %c at %d\n", tmp[i], i);
+    } else if (tmp[i] == ' ') {
+      // printf("Found non quote %c at %d, IsInsideQuote: %d\n", tmp[i], i, isInsideQuote);
       if (isInsideQuote == 1) {
         // This space is enclosed between quotes, so include this and continue reading
         i++;
@@ -134,10 +127,17 @@ Command* parse_command(char* command) {
         free(arg);
 
         i = argEnd + 1;
-        argStart = i;
 
         isInsideQuote = -1;
         quoteCount = 0;
+
+        // Skip all whitespaces
+        // printf("Skipping char count from %d\n", i);
+        while (i<charCount && tmp[i] == ' ') {
+          i++;
+        }
+
+        argStart = i;
       }
     } else {
       // printf("Found non quote non space at %c in %d\n", tmp[i], i);
