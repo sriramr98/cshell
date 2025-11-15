@@ -27,6 +27,37 @@ void free_command(Command* cmd) {
   free(cmd);
 }
 
+// source is the string from where we need to extract the argument enclosed between argStart and argEnd.
+// there will be exactly `quoteCount` quotes in between.
+char* extract_argument(char* source, int argStart, int argEnd, int quoteCount) {
+  // printf("ArgStart: %d, ArgEnd: %d, QuoteCount: %d\n", argStart, argEnd, quoteCount);
+  int argLen = argEnd - argStart - quoteCount; // The argument should exclude quotes.
+
+  char* arg = malloc(sizeof(char) * argLen);
+  if (arg == NULL) {
+    return NULL;
+  }
+
+  int argIdx = 0;
+  for (int j = argStart; j < argEnd; j++) {
+    if (source[j] == '\'' || source[j] == '"') {
+      // printf("Skipping quotes\n");
+      continue;
+    } else {
+      // printf("ArgStart: %d, J: %d, ArgIdx: %d\n", argStart, j, argIdx);
+      arg[argIdx] = source[j];
+      argIdx++;
+    }
+  }
+
+  arg[argIdx] = '\0';
+
+  printf("Found argument %s\n", arg);
+
+  return arg;
+
+}
+
 Command* parse_command(char* command) {
   Command* cmd = malloc(sizeof(Command));
   cmd->command = NULL;
@@ -60,63 +91,65 @@ Command* parse_command(char* command) {
   strncpy(cmd->command, tmp + cmdStart, cmdLen);
   cmd->command[cmdLen] = '\0';
 
+  // Skip whitespace
+  while (i < charCount && tmp[i] == ' ') {
+    i++;
+  }
+
+  int argStart = i;
+
+  int isInsideQuote = -1;
+  int quoteCount = 0;
+
+  // printf("Staring parse arguments..\n");
+
   // Parse arguments
   while (i < charCount) {
-    // Skip whitespace
-    while (i < charCount && tmp[i] == ' ') {
-      i++;
-    }
-    
-    if (i >= charCount) {
-      break;
-    }
-    
-    int argStart = i;
-    int argLen = 0;
-    char* arg = NULL;
-    
-    // Check if argument starts with a quote
-    if (tmp[i] == '"' || tmp[i] == '\'') {
-      char quote = tmp[i];
-      i++; // Skip opening quote
-      argStart = i;
-      
-      // Find closing quote
-      while (i < charCount && tmp[i] != quote) {
-        i++;
-      }
-      
-      if (i < charCount) {
-        // Found closing quote
-        argLen = i - argStart;
-        arg = malloc(sizeof(char) * (argLen + 1));
-        strncpy(arg, tmp + argStart, argLen);
-        arg[argLen] = '\0';
-        i++; // Skip closing quote
+ 
+    if (tmp[i] == '\'') {
+      // printf("Found quotes at %d\n", i);
+      if (isInsideQuote == 1) {
+        isInsideQuote = -1;
       } else {
-        // No closing quote found, treat as regular argument
-        argLen = charCount - argStart;
-        arg = malloc(sizeof(char) * (argLen + 1));
-        strncpy(arg, tmp + argStart - 1, argLen + 1); // Include the quote
-        arg[argLen + 1] = '\0';
-        i = charCount;
+        isInsideQuote = 1;
+      }
+      quoteCount++;
+      i++;
+      continue;
+    }
+
+
+    if (tmp[i] == ' ') {
+      // printf("Found non quote %c at %d\n", tmp[i], i);
+      if (isInsideQuote == 1) {
+        // This space is enclosed between quotes, so include this and continue reading
+        i++;
+      } else {
+        // This marks the end of a parameter
+        int argEnd = i;
+
+        char* arg = extract_argument(tmp, argStart, argEnd, quoteCount);
+                
+        add_array_list(cmd->inputs, arg);
+        free(arg);
+
+        i = argEnd + 1;
+        argStart = i;
+
+        isInsideQuote = -1;
+        quoteCount = 0;
       }
     } else {
-      // Regular argument (no quotes)
-      while (i < charCount && tmp[i] != ' ') {
-        i++;
-      }
-      
-      argLen = i - argStart;
-      arg = malloc(sizeof(char) * (argLen + 1));
-      strncpy(arg, tmp + argStart, argLen);
-      arg[argLen] = '\0';
+      // printf("Found non quote non space at %c in %d\n", tmp[i], i);
+      i++;
     }
-    
-    // Add argument to the list
-    if (arg != NULL) {
-      add_array_list(cmd->inputs, arg);
-    }
+  }
+
+  if (argStart < i) {
+    // Parse last parameter
+    char* arg = extract_argument(tmp, argStart, i, quoteCount);
+    add_array_list(cmd->inputs, arg);
+    free(arg);
   }
 
   free(tmp);
