@@ -29,33 +29,44 @@ void free_command(Command* cmd) {
 
 // source is the string from where we need to extract the argument enclosed between argStart and argEnd.
 // there will be exactly `quoteCount` quotes in between.
-char* extract_argument(char* source, int argStart, int argEnd, int quoteCount, char quoteType) {
-  // printf("ArgStart: %d, ArgEnd: %d, QuoteCount: %d\n", argStart, argEnd, quoteCount);
-  int argLen = argEnd - argStart - quoteCount; // The argument should exclude quotes.
-
-  char* arg = malloc(sizeof(char) * argLen);
+char* extract_argument(char* source, int argStart, int argEnd, int argLen, char quoteType) {
+  // printf("ArgStart: %d, ArgEnd: %d, ArgLen: %d\n", argStart, argEnd, argLen);
+  char* arg = malloc(sizeof(char) * (argLen + 1));
   if (arg == NULL) {
     return NULL;
   }
 
+  int j = argStart;
   int argIdx = 0;
-  for (int j = argStart; j < argEnd; j++) {
-    if (source[j] == quoteType) {
-      // printf("Skipping quotes\n");
+  int isInsideQuote = -1;
+
+  while (j < argEnd) {
+    if (source[j] == '\\' && quoteType == '\0') {
+      j++; // skip the escape character
+      arg[argIdx] = source[j]; // the next character is included regardless of what it
+    } else if (source[j] == quoteType) {
+      // Skip quotes. Empty block.
+      j++;
       continue;
     } else {
-      // printf("ArgStart: %d, J: %d, ArgIdx: %d\n", argStart, j, argIdx);
       arg[argIdx] = source[j];
-      argIdx++;
     }
+
+    argIdx++;
+    j++;
   }
 
   arg[argIdx] = '\0';
 
-  // printf("Found argument %s\n", arg);
-
   return arg;
 
+}
+
+void print_cmd(Command* cmd) {
+  printf("Command: %s\n", cmd->command);
+  for (int i=0; i<cmd->inputs->size; i++) {
+    printf("Arg %d - %s\n", i+1, get_element_from_list(cmd->inputs, i));
+  }
 }
 
 Command* parse_command(char* command) {
@@ -100,20 +111,32 @@ Command* parse_command(char* command) {
 
   int isInsideQuote = -1;
   char quoteType = '\0';
-  int quoteCount = 0;
+  int argLen = 0;
 
   // printf("Staring parse arguments..\n");
 
   // Parse arguments
   while (i < charCount) {
-    if (tmp[i] == '\'') {
+    if (tmp[i] == '\\') {
+      if (isInsideQuote == 1) {
+        // If escape character is inside the quote, include it in the result string
+        i++;
+        argLen++;
+      } else {
+        // For escape characters, consider this and the next character valid
+        i+=2;
+        argLen++;
+      }
+    } else if (tmp[i] == '\'') {
       // printf("Found quotes at %d\n", i);
       if (quoteType == '\0') {
+        // Starting of a quote as param
         quoteType = '\'';
         isInsideQuote = 1;
       } else if (quoteType == '\'') {
         isInsideQuote = isInsideQuote == 1 ? -1 : 1;
-        quoteCount++;
+      } else {
+        argLen++;
       }
       i++;
     } else if (tmp[i] == '"') {
@@ -122,7 +145,6 @@ Command* parse_command(char* command) {
         isInsideQuote = 1;
       } else if (quoteType == '"') {
         isInsideQuote = isInsideQuote == 1 ? -1 : 1;
-        quoteCount++;
       }
       i++;
     } else if (tmp[i] == ' ') {
@@ -130,11 +152,12 @@ Command* parse_command(char* command) {
       if (isInsideQuote == 1) {
         // This space is enclosed between quotes, so include this and continue reading
         i++;
+        argLen++;
       } else {
         // This marks the end of a parameter
         int argEnd = i;
 
-        char* arg = extract_argument(tmp, argStart, argEnd, quoteCount, quoteType);
+        char* arg = extract_argument(tmp, argStart, argEnd, argLen, quoteType);
                 
         add_array_list(cmd->inputs, arg);
         free(arg);
@@ -142,7 +165,7 @@ Command* parse_command(char* command) {
         i = argEnd + 1;
 
         isInsideQuote = -1;
-        quoteCount = 0;
+        argLen = 0;
         quoteType = '\0';
 
         // Skip all whitespaces
@@ -156,17 +179,19 @@ Command* parse_command(char* command) {
     } else {
       // printf("Found non quote non space at %c in %d\n", tmp[i], i);
       i++;
+      argLen++;
     }
   }
 
   if (argStart < i) {
     // Parse last parameter
-    char* arg = extract_argument(tmp, argStart, i, quoteCount, quoteType);
+    char* arg = extract_argument(tmp, argStart, i, argLen, quoteType);
     add_array_list(cmd->inputs, arg);
     free(arg);
   }
 
   free(tmp);
+  // print_cmd(cmd);
   return cmd;
 }
 
